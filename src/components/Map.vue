@@ -9,6 +9,7 @@
         v-for = "school in schools"
         :key = "school.name"
         :options="{position: school.coords, icon: {url: school.logo.url, scaledSize: {width : school.logo.width, height : school.logo.height}}, visible: school.visible}"
+        @click = "marker_clicked(school)"
       />
       <CustomControl position = "TOP_RIGHT">
         <q-select
@@ -26,29 +27,32 @@
         />
       </CustomControl>
     </GoogleMap>
+    <SchoolPreview :school = "active_school" v-if = "popup_active" @close = "popup_active = false"/>
 </template>
 
 <script lang="ts">
 import {GoogleMap, Marker, CustomControl} from 'vue3-google-map'
 import {ref, reactive} from 'vue'
+import SchoolPreview from './SchoolPreview.vue'
 
 interface Coords {
-  lat: number
-  lng: number
-};
+  lat: number;
+  lng: number;
+}
 
 interface Logo {
-  url: string,
-  width: number,
-  height: number
+  url: string;
+  width: number;
+  height: number;
 }
 
 interface School {
-  name: string
-  coords: Coords,
-  logo: Logo,
-  visible: boolean
-};
+  name: string;
+  coords: Coords;
+  logo: Logo;
+  visible: boolean;
+}
+
 
 export default {
   name: 'LayoutDefault',
@@ -58,6 +62,7 @@ export default {
     GoogleMap,
     Marker,
     CustomControl,
+    SchoolPreview
   },
   props: {
     style: String,
@@ -70,7 +75,7 @@ export default {
   setup () {
     let center = reactive({lat: 48.8566, lng: 2.3522}) as Coords;
     let search_input =  ref('');
-    let schools: School[] = [
+    const schools: School[] = [
       {
         name: 'ENSTA Paris',
         coords: {lat: 48.7107, lng: 2.2181},
@@ -102,7 +107,7 @@ export default {
       image.src = school.logo.url;
     }
     let filtered = ref([{}]);
-    let filter = function(input: string, update: Function): void {
+    let filter = function(input: string, update: (foo: any) => void): void {
       const lower = input.toLowerCase();
 
       update(() => {
@@ -111,12 +116,22 @@ export default {
                 v.name.toLowerCase().indexOf(lower) > -1)
       })
     };
+    let popup_active = ref(false);
+    let active_school = reactive({}) as School;
+    let marker_clicked = function(school: School) {
+      Object.assign(active_school, school);
+      popup_active.value = true;
+      console.log(active_school);
+    };
     return {
       center,
       search_input,
       schools,
       filtered,
-      filter
+      filter,
+      popup_active,
+      active_school,
+      marker_clicked
     };
   }
 }
